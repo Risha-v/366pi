@@ -9,345 +9,86 @@ import json
 from datetime import datetime
 from PIL import Image
 import imagehash
+import rasterio
+from rasterio.windows import Window
+from rasterio.enums import Resampling
+from sklearn.model_selection import train_test_split
+import cv2
 
-# Additional imports for robust image validation
-try:
-    import cv2
-    OPENCV_AVAILABLE = True
-except ImportError:
-    OPENCV_AVAILABLE = False
-
-try:
-    import imageio
-    IMAGEIO_AVAILABLE = True
-except ImportError:
-    IMAGEIO_AVAILABLE = False
-
-try:
-    import rasterio
-    RASTERIO_AVAILABLE = True
-except ImportError:
-    RASTERIO_AVAILABLE = False
-
-try:
-    import tifffile
-    TIFFFILE_AVAILABLE = True
-except ImportError:
-    TIFFFILE_AVAILABLE = False
-
-class EuroSATDatasetOrganizer:
-    """
-    Organize EuroSAT dataset into structured format for machine learning with:
-    - Size filtering
-    - Validation
-    - Comprehensive logging
-    """
-    
-    def __init__(self, source_path, output_path, min_size=(64, 64)):
-        """
-        Initialize the organizer with logging and configuration
-        
-        Args:
-            source_path: Path to the raw EuroSAT dataset
-            output_path: Path where organized dataset will be saved
-            min_size: Minimum (width, height) required for images
-        """
-        self.source_path = Path(source_path)
+class EuroSATProcessor:
+    def __init__(self, rgb_source_path, multispectral_source_path, output_path, 
+                 target_size=(224, 224), min_size=(64, 64), random_seed=42):
+        self.rgb_source_path = Path(rgb_source_path)
+        self.multispectral_source_path = Path(multispectral_source_path)
         self.output_path = Path(output_path)
+        self.target_height, self.target_width = target_size
         self.min_width, self.min_height = min_size
+        self.random_seed = random_seed
+        
         self.expected_classes = [
             'AnnualCrop', 'Forest', 'HerbaceousVegetation', 'Highway',
             'Industrial', 'Pasture', 'PermanentCrop', 'Residential',
             'River', 'SeaLake'
         ]
         
-        # Initialize statistics
-        self.stats = defaultdict(dict)
-        self.corrupted_files = []
-        self.small_files = []
-        self.processed_files = 0
-        self.random_seed = 42
-        
-        # Setup logging
+        # Setup logging and stats
         self.setup_logging()
+        self.initialize_stats()
         
     def setup_logging(self):
-        """Configure logging system"""
-        # Create output directory if it doesn't exist
         self.output_path.mkdir(parents=True, exist_ok=True)
         
-        # Configure logging
-        self.logger = logging.getLogger('EuroSATOrganizer')
+        self.logger = logging.getLogger('EuroSATProcessor')
         self.logger.setLevel(logging.DEBUG)
         
-        # Create file handler which logs even debug messages
-        log_file = self.output_path / 'dataset_organization.log'
+        log_file = self.output_path / 'processing.log'
         fh = logging.FileHandler(log_file, mode='w')
         fh.setLevel(logging.DEBUG)
         
-        # Create console handler with a higher log level (only INFO and above)
         ch = logging.StreamHandler()
         ch.setLevel(logging.INFO)
         
-        # Create formatter and add it to the handlers
-        file_formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         console_formatter = logging.Formatter('%(message)s')
         
         fh.setFormatter(file_formatter)
         ch.setFormatter(console_formatter)
         
-        # Add the handlers to the logger
         self.logger.addHandler(fh)
         self.logger.addHandler(ch)
         
-        # Add a filter to the console handler to suppress WARNING messages
-        ch.addFilter(lambda record: record.levelno < logging.WARNING)
-        
-        # Log initialization
-        self.logger.info("EuroSAT Dataset Organizer")
+        self.logger.info("EuroSAT Dataset Processor")
         self.logger.info("=" * 50)
-        self.logger.info(f"Source directory: {self.source_path}")
-        self.logger.info(f"Output directory: {self.output_path}")
-        self.logger.info(f"Minimum image size: {self.min_width}x{self.min_height}")
-        self.logger.debug("Logging system initialized")
+        self.logger.info(f"RGB Source: {self.rgb_source_path}")
+        self.logger.info(f"Multispectral Source: {self.multispectral_source_path}")
+        self.logger.info(f"Output: {self.output_path}")
+        self.logger.info(f"Target size: {self.target_width}x{self.target_height}")
+        self.logger.info(f"Random seed: {self.random_seed}")
     
-    def check_libraries(self):
-        """Check if required libraries are available"""
-        self.logger.debug("Checking required libraries...")
-        
-        if not (RASTERIO_AVAILABLE or TIFFFILE_AVAILABLE):
-            self.logger.warning("Neither rasterio nor tifffile is available!")
-            self.logger.warning("Multispectral TIFF validation will be limited")
-            self.logger.info("Install one of them for better TIFF handling:")
-            self.logger.info("  pip install rasterio")
-            self.logger.info("  OR")
-            self.logger.info("  pip install tifffile")
-            return False
-        return True
-    
-    def validate_tiff_file(self, file_path):
-        """
-        Validate TIFF file integrity and check bands and size
-        Returns dict with validation info and size check
-        """
-        try:
-            if RASTERIO_AVAILABLE:
-                with rasterio.open(file_path) as src:
-                    bands = src.count
-                    height, width = src.height, src.width
-                    size_valid = width >= self.min_width and height >= self.min_height
-                    sample = src.read(1, window=((0, 10), (0, 10)))
-                    
-                    self.logger.debug(f"Validated TIFF: {file_path.name} - "
-                                    f"Size: {width}x{height}, Bands: {bands}")
-                    return {
-                        'valid': True,
-                        'size_valid': size_valid,
-                        'bands': bands,
-                        'shape': (height, width),
-                        'dtype': src.dtypes[0]
-                    }
-            elif TIFFFILE_AVAILABLE:
-                img = tifffile.imread(file_path)
-                if len(img.shape) == 3:
-                    height, width, bands = img.shape
-                else:
-                    height, width = img.shape
-                    bands = 1
-                
-                size_valid = width >= self.min_width and height >= self.min_height
-                
-                self.logger.debug(f"Validated TIFF: {file_path.name} - "
-                                f"Size: {width}x{height}, Bands: {bands}")
-                return {
-                    'valid': True,
-                    'size_valid': size_valid,
-                    'bands': bands,
-                    'shape': (height, width),
-                    'dtype': str(img.dtype)
-                }
-        except Exception as e:
-            self.logger.debug(f"TIFF validation failed: {file_path.name} - {str(e)}")
-            return {
-                'valid': False,
-                'size_valid': False,
-                'error': str(e)
+    def initialize_stats(self):
+        """Initialize statistics counters"""
+        self.stats = {
+            'rgb': {
+                'total': 0,
+                'processed': 0,
+                'skipped': 0,
+                'corrupted': 0,
+                'class_distribution': defaultdict(int)
+            },
+            'multispectral': {
+                'total': 0,
+                'processed': 0,
+                'skipped': 0,
+                'corrupted': 0,
+                'class_distribution': defaultdict(int)
             }
-    
-    def validate_rgb_file(self, file_path):
-        """
-        Robust RGB image validation with multiple fallback methods
-        Returns dict with validation info and size check
-        """
-        validation_attempts = []
-        
-        # Attempt 1: Try with OpenCV if available
-        if OPENCV_AVAILABLE:
-            try:
-                img = cv2.imread(str(file_path), cv2.IMREAD_COLOR)
-                if img is not None:
-                    height, width = img.shape[:2]
-                    size_valid = width >= self.min_width and height >= self.min_height
-                    
-                    # Check for blank images
-                    if np.all(img == img[0,0]):
-                        return {
-                            'valid': False,
-                            'size_valid': False,
-                            'error': "Image appears uniform (OpenCV)"
-                        }
-                    
-                    return {
-                        'valid': True,
-                        'size_valid': size_valid,
-                        'shape': (height, width),
-                        'mode': 'BGR',
-                        'method': 'OpenCV'
-                    }
-            except Exception as e:
-                validation_attempts.append(f"OpenCV failed: {str(e)}")
-        
-        # Attempt 2: Try with imageio if available
-        if IMAGEIO_AVAILABLE:
-            try:
-                img = imageio.imread(file_path)
-                if len(img.shape) == 3:  # Color image
-                    height, width, channels = img.shape
-                else:  # Grayscale
-                    height, width = img.shape
-                    channels = 1
-                
-                size_valid = width >= self.min_width and height >= self.min_height
-                
-                return {
-                    'valid': True,
-                    'size_valid': size_valid,
-                    'shape': (height, width),
-                    'mode': f'{channels} channel',
-                    'method': 'imageio'
-                }
-            except Exception as e:
-                validation_attempts.append(f"imageio failed: {str(e)}")
-        
-        # Attempt 3: Fallback to PIL/Pillow
-        try:
-            with Image.open(file_path) as img:
-                # Force loading the image data
-                try:
-                    img.load()
-                except Exception as e:
-                    return {
-                        'valid': False,
-                        'size_valid': False,
-                        'error': f"PIL loading failed: {str(e)}"
-                    }
-                
-                width, height = img.size
-                size_valid = width >= self.min_width and height >= self.min_height
-                
-                # Check color mode
-                if img.mode not in ['RGB', 'L']:
-                    return {
-                        'valid': False, 
-                        'size_valid': False,
-                        'error': f"Invalid color mode: {img.mode}"
-                    }
-                
-                # Verify image integrity
-                try:
-                    img.verify()
-                except Exception as e:
-                    return {
-                        'valid': False,
-                        'size_valid': False,
-                        'error': f"Image corrupted: {str(e)}"
-                    }
-                
-                # Check for empty/blank images
-                if img.mode == 'RGB':
-                    extrema = img.getextrema()
-                    if all(e[0] == e[1] for e in extrema):
-                        return {
-                            'valid': False,
-                            'size_valid': False,
-                            'error': "Image appears empty"
-                        }
-                
-                return {
-                    'valid': True,
-                    'size_valid': size_valid,
-                    'shape': (width, height),
-                    'mode': img.mode,
-                    'method': 'Pillow'
-                }
-        except Exception as e:
-            validation_attempts.append(f"Pillow failed: {str(e)}")
-        
-        # If all methods failed
-        error_msg = "All validation methods failed. Attempts: " + "; ".join(validation_attempts)
-        self.logger.debug(f"RGB validation failed: {file_path.name} - {error_msg}")
-        return {
-            'valid': False,
-            'size_valid': False,
-            'error': error_msg
         }
     
-    def is_valid_image(self, file_path, data_type):
-        """
-        Perform thorough validation of image files including size check
-        Returns dict with validation info and size check
-        """
-        if data_type == 'multispectral':
-            return self.validate_tiff_file(file_path)
-        else:  # RGB
-            return self.validate_rgb_file(file_path)
-    
-    def scan_source_dataset(self):
-        """Scan the source dataset and collect statistics"""
-        self.logger.info("\nScanning source dataset...")
+    def create_directory_structure(self):
+        self.logger.info("\nCreating directory structure...")
         
-        scan_results = {
-            'rgb': {'available': False, 'classes': {}},
-            'multispectral': {'available': False, 'classes': {}}
-        }
-        
-        # Scan RGB folders
-        rgb_found = False
-        for class_name in self.expected_classes:
-            class_folder = self.source_path / class_name
-            if class_folder.exists() and class_folder.is_dir():
-                jpg_files = list(class_folder.glob("*.jpg"))
-                if jpg_files:
-                    scan_results['rgb']['available'] = True
-                    scan_results['rgb']['classes'][class_name] = len(jpg_files)
-                    self.logger.debug(f"Found {len(jpg_files)} RGB images in {class_name}")
-                    rgb_found = True
-        
-        # Scan multispectral folders
-        multispectral_path = self.source_path / "allBands"
-        if multispectral_path.exists():
-            for class_name in self.expected_classes:
-                class_folder = multispectral_path / class_name
-                if class_folder.exists() and class_folder.is_dir():
-                    tif_files = list(class_folder.glob("*.tif"))
-                    if tif_files:
-                        scan_results['multispectral']['available'] = True
-                        scan_results['multispectral']['classes'][class_name] = len(tif_files)
-                        self.logger.debug(f"Found {len(tif_files)} multispectral images in {class_name}")
-        
-        self.logger.info("Scan completed")
-        return scan_results
-    
-    def create_output_structure(self):
-        """Create organized output directory structure"""
-        self.logger.info("\nCreating output structure...")
-        
-        data_types = ['rgb', 'multispectral']
-        splits = ['train', 'val', 'test']
-        
-        for data_type in data_types:
-            for split in splits:
+        for data_type in ['rgb', 'multispectral']:
+            for split in ['train', 'val', 'test']:
                 split_dir = self.output_path / data_type / split
                 split_dir.mkdir(parents=True, exist_ok=True)
                 
@@ -358,66 +99,265 @@ class EuroSATDatasetOrganizer:
             metadata_dir = self.output_path / data_type / 'metadata'
             metadata_dir.mkdir(parents=True, exist_ok=True)
         
-        self.logger.info(f"Directory structure created at: {self.output_path}")
+        self.logger.info("Directory structure created")
     
-    def clean_dataset(self, files_per_class, source_path, data_type):
-        """Perform comprehensive cleaning of dataset"""
-        self.logger.info(f"\nCleaning {data_type} dataset...")
+    def scan_source_dataset(self):
+        self.logger.info("\nScanning source datasets...")
         
-        cleaned_files = defaultdict(list)
-        validation_report = {}
+        scan_results = {
+            'rgb': {'available': False, 'classes': {}},
+            'multispectral': {'available': False, 'classes': {}}
+        }
         
-        for class_name, file_list in files_per_class.items():
-            self.logger.info(f"Processing class: {class_name}")
-            valid_files = []
+        # Check for RGB data
+        if self.rgb_source_path.exists():
+            for class_name in self.expected_classes:
+                class_folder = self.rgb_source_path / class_name
+                if class_folder.exists():
+                    jpg_files = list(class_folder.glob("*.jpg"))
+                    if jpg_files:
+                        scan_results['rgb']['available'] = True
+                        scan_results['rgb']['classes'][class_name] = len(jpg_files)
+        
+        # Check for multispectral data
+        if self.multispectral_source_path.exists():
+            for class_name in self.expected_classes:
+                class_folder = self.multispectral_source_path / class_name
+                if class_folder.exists():
+                    tif_files = list(class_folder.glob("*.tif"))
+                    if tif_files:
+                        scan_results['multispectral']['available'] = True
+                        scan_results['multispectral']['classes'][class_name] = len(tif_files)
+        
+        self.logger.info(f"RGB data available: {scan_results['rgb']['available']}")
+        if scan_results['rgb']['available']:
+            self.logger.info(f"RGB class distribution: {dict(scan_results['rgb']['classes'])}")
+        
+        self.logger.info(f"Multispectral data available: {scan_results['multispectral']['available']}")
+        if scan_results['multispectral']['available']:
+            self.logger.info(f"Multispectral class distribution: {dict(scan_results['multispectral']['classes'])}")
+        
+        return scan_results
+    
+    def validate_rgb_image(self, file_path):
+        """Validate RGB image file"""
+        try:
+            img = cv2.imread(str(file_path))
+            if img is None:
+                return {'valid': False, 'error': 'Failed to read with OpenCV'}
             
-            for file_path in file_list:
-                validation = self.is_valid_image(file_path, data_type)
+            h, w = img.shape[:2]
+            size_valid = w >= self.min_width and h >= self.min_height
+            
+            # Check for blank images
+            if np.all(img == img[0,0]):
+                return {'valid': False, 'error': 'Blank/uniform image'}
+            
+            return {
+                'valid': True,
+                'size_valid': size_valid,
+                'shape': (h, w)
+            }
+        except Exception as e:
+            return {'valid': False, 'error': str(e)}
+    
+    def validate_multispectral_image(self, file_path):
+        """Validate multispectral TIFF file"""
+        try:
+            with rasterio.open(file_path) as src:
+                if src.count != 13:
+                    return {'valid': False, 'error': f'Expected 13 bands, got {src.count}'}
+                
+                h, w = src.height, src.width
+                size_valid = w >= self.min_width and h >= self.min_height
+                
+                # Quick check for corrupted data
+                sample_band = src.read(1)
+                if np.all(sample_band == sample_band[0,0]):
+                    return {'valid': False, 'error': 'Blank/uniform band detected'}
+                
+                return {
+                    'valid': True,
+                    'size_valid': size_valid,
+                    'shape': (h, w),
+                    'bands': src.count
+                }
+        except Exception as e:
+            return {'valid': False, 'error': str(e)}
+    
+    def resize_rgb_image(self, file_path, output_path):
+        """Resize RGB image to target dimensions"""
+        try:
+            img = cv2.imread(str(file_path))
+            if img is None:
+                return False
+            
+            resized = cv2.resize(img, (self.target_width, self.target_height), 
+                                interpolation=cv2.INTER_LANCZOS4)
+            cv2.imwrite(str(output_path), resized)
+            return True
+        except Exception as e:
+            self.logger.error(f"Error resizing RGB image {file_path.name}: {e}")
+            return False
+    
+    def resize_multispectral_image(self, file_path, output_path):
+        """Resize multispectral image while preserving all bands"""
+        try:
+            with rasterio.open(file_path) as src:
+                # Read and resize all bands
+                data = src.read(
+                    out_shape=(src.count, self.target_height, self.target_width),
+                    resampling=Resampling.bilinear
+                )
+                
+                # Update metadata
+                profile = src.profile
+                profile.update({
+                    'height': self.target_height,
+                    'width': self.target_width,
+                    'transform': src.transform * src.transform.scale(
+                        (src.width / self.target_width),
+                        (src.height / self.target_height)
+                    )
+                })
+                
+                # Write resized image
+                with rasterio.open(output_path, 'w', **profile) as dst:
+                    dst.write(data)
+                
+                return True
+        except Exception as e:
+            self.logger.error(f"Error resizing multispectral image {file_path.name}: {e}")
+            return False
+    
+    def process_rgb_dataset(self):
+        """Process RGB dataset (JPEG images)"""
+        self.logger.info("\nProcessing RGB dataset...")
+        
+        # Collect all valid files
+        files_per_class = defaultdict(list)
+        for class_name in self.expected_classes:
+            class_dir = self.rgb_source_path / class_name
+            if not class_dir.exists():
+                self.logger.debug(f"RGB class directory not found: {class_dir}")
+                continue
+                
+            for file_path in class_dir.glob("*.jpg"):
+                validation = self.validate_rgb_image(file_path)
                 
                 if not validation['valid']:
-                    self.logger.debug(f"Invalid file: {file_path.name} - {validation['error']}")
-                    self.corrupted_files.append(str(file_path))
+                    self.stats['rgb']['corrupted'] += 1
+                    self.logger.debug(f"Invalid RGB file: {file_path.name} - {validation['error']}")
                     continue
                 
                 if not validation['size_valid']:
-                    self.logger.debug(f"Small file skipped: {file_path.name} - Size: {validation.get('shape', 'unknown')}")
-                    self.small_files.append(str(file_path))
+                    self.stats['rgb']['skipped'] += 1
+                    self.logger.debug(f"Small RGB file skipped: {file_path.name}")
                     continue
                 
-                valid_files.append(file_path)
-            
-            cleaned_files[class_name] = valid_files
-            validation_report[class_name] = {
-                'original_count': len(file_list),
-                'valid_count': len(valid_files),
-                'invalid_count': len(file_list) - len(valid_files),
-                'small_files_count': sum(1 for f in file_list 
-                                      if self.is_valid_image(f, data_type).get('valid') 
-                                      and not self.is_valid_image(f, data_type).get('size_valid'))
-            }
-            
-            self.logger.info(f"  Valid files: {len(valid_files)}/{len(file_list)}")
+                files_per_class[class_name].append(file_path)
+                self.stats['rgb']['class_distribution'][class_name] += 1
+                self.stats['rgb']['total'] += 1
         
-        return cleaned_files, validation_report
+        if not files_per_class:
+            self.logger.warning("No valid RGB files found!")
+            return False
+        
+        # Split files
+        split_data = self.split_files(files_per_class)
+        
+        # Process and save files
+        for class_name, splits in split_data.items():
+            for split_name, files in splits.items():
+                if split_name == 'counts':
+                    continue
+                
+                for file_path in files:
+                    output_path = self.output_path / 'rgb' / split_name / class_name / file_path.name
+                    success = self.resize_rgb_image(file_path, output_path)
+                    
+                    if success:
+                        self.stats['rgb']['processed'] += 1
+                    else:
+                        self.stats['rgb']['skipped'] += 1
+        
+        self.logger.info(f"RGB processing complete. Processed: {self.stats['rgb']['processed']}/{self.stats['rgb']['total']}")
+        return True
     
-    def split_dataset(self, files_per_class, train_ratio=0.7, val_ratio=0.15, test_ratio=0.15):
-        """Split dataset into train/val/test sets"""
-        self.logger.debug("\nSplitting dataset...")
+    def process_multispectral_dataset(self):
+        """Process multispectral dataset (TIFF images)"""
+        self.logger.info("\nProcessing multispectral dataset...")
         
+        # Collect all valid files
+        files_per_class = defaultdict(list)
+        
+        for class_name in self.expected_classes:
+            class_dir = self.multispectral_source_path / class_name
+            if not class_dir.exists():
+                self.logger.debug(f"Multispectral class directory not found: {class_dir}")
+                continue
+                
+            for file_path in class_dir.glob("*.tif"):
+                validation = self.validate_multispectral_image(file_path)
+                
+                if not validation['valid']:
+                    self.stats['multispectral']['corrupted'] += 1
+                    self.logger.debug(f"Invalid multispectral file: {file_path.name} - {validation['error']}")
+                    continue
+                
+                if not validation['size_valid']:
+                    self.stats['multispectral']['skipped'] += 1
+                    self.logger.debug(f"Small multispectral file skipped: {file_path.name}")
+                    continue
+                
+                files_per_class[class_name].append(file_path)
+                self.stats['multispectral']['class_distribution'][class_name] += 1
+                self.stats['multispectral']['total'] += 1
+        
+        if not files_per_class:
+            self.logger.warning("No valid multispectral files found!")
+            return False
+        
+        # Split files
+        split_data = self.split_files(files_per_class)
+        
+        # Process and save files
+        for class_name, splits in split_data.items():
+            for split_name, files in splits.items():
+                if split_name == 'counts':
+                    continue
+                
+                for file_path in files:
+                    output_path = self.output_path / 'multispectral' / split_name / class_name / file_path.name
+                    success = self.resize_multispectral_image(file_path, output_path)
+                    
+                    if success:
+                        self.stats['multispectral']['processed'] += 1
+                    else:
+                        self.stats['multispectral']['skipped'] += 1
+        
+        self.logger.info(f"Multispectral processing complete. Processed: {self.stats['multispectral']['processed']}/{self.stats['multispectral']['total']}")
+        return True
+    
+    def split_files(self, files_per_class):
+        """Split files into train/val/test sets (70/15/15)"""
+        self.logger.info("\nSplitting files into train/val/test sets...")
+        
+        split_data = {}
         random.seed(self.random_seed)
-        split_info = {}
         
-        for class_name, file_list in files_per_class.items():
-            random.shuffle(file_list)
-            total_files = len(file_list)
-            train_count = int(total_files * train_ratio)
-            val_count = int(total_files * val_ratio)
+        for class_name, files in files_per_class.items():
+            random.shuffle(files)
+            total_files = len(files)
+            
+            train_count = int(total_files * 0.7)
+            val_count = int(total_files * 0.15)
             test_count = total_files - train_count - val_count
             
-            split_info[class_name] = {
-                'train': file_list[:train_count],
-                'val': file_list[train_count:train_count + val_count],
-                'test': file_list[train_count + val_count:],
+            split_data[class_name] = {
+                'train': files[:train_count],
+                'val': files[train_count:train_count + val_count],
+                'test': files[train_count + val_count:],
                 'counts': {
                     'train': train_count,
                     'val': val_count,
@@ -426,238 +366,92 @@ class EuroSATDatasetOrganizer:
                 }
             }
             
-            self.logger.debug(f"Class {class_name} split: "
-                            f"Train={train_count}, Val={val_count}, Test={test_count}")
+            self.logger.info(
+                f"{class_name}: Train={train_count}, Val={val_count}, Test={test_count}"
+            )
         
-        return split_info
+        return split_data
     
-    def copy_files_to_structure(self, split_info, data_type):
-        """Copy files to organized structure with proper paths"""
-        self.logger.info(f"\nCopying {data_type} files to organized structure...")
-        
-        for class_name, splits in split_info.items():
-            self.logger.info(f"Processing class: {class_name}")
-            
-            for split_name, file_list in splits.items():
-                if split_name == 'counts':
-                    continue
-                
-                self.logger.info(f"  {split_name}: {len(file_list)} files")
-                
-                for i, file_path in enumerate(file_list):
-                    try:
-                        # Determine source path based on data type
-                        if data_type == 'multispectral':
-                            src_file = self.source_path / "allBands" / class_name / file_path.name
-                        else:  # RGB
-                            src_file = self.source_path / class_name / file_path.name
-                        
-                        dst_file = self.output_path / data_type / split_name / class_name / file_path.name
-                        
-                        shutil.copy2(src_file, dst_file)
-                        self.processed_files += 1
-                        
-                        if (i + 1) % 100 == 0:
-                            self.logger.debug(f"    Copied {i + 1}/{len(file_list)} files")
-                            
-                    except Exception as e:
-                        self.logger.error(f"Error copying {file_path.name}: {e}")
-                        self.corrupted_files.append(str(src_file))
-        
-        self.logger.info(f"\nTotal {data_type} files processed: {self.processed_files}")
-        if self.corrupted_files:
-            self.logger.warning(f"Corrupted files encountered: {len(self.corrupted_files)}")
-    
-    def save_validation_report(self, validation_report, data_type):
-        """Save validation report to metadata"""
-        metadata_dir = self.output_path / data_type / 'metadata'
-        
-        if validation_report:
-            report_file = metadata_dir / 'validation_report.json'
-            with open(report_file, 'w') as f:
-                json.dump(validation_report, f, indent=2)
-            
-            if self.small_files:
-                small_files_log = metadata_dir / 'small_files.txt'
-                with open(small_files_log, 'w') as f:
-                    f.write("\n".join(self.small_files))
-            
-            self.logger.debug(f"Saved validation report for {data_type}")
-    
-    def generate_metadata(self, split_info, data_type):
-        """Generate metadata and statistics"""
-        self.logger.info(f"\nGenerating {data_type} metadata...")
+    def save_metadata(self):
+        """Save processing metadata and statistics"""
+        self.logger.info("\nSaving metadata...")
         
         metadata = {
             'dataset_info': {
-                'name': 'EuroSAT',
-                'data_type': data_type,
-                'classes': self.expected_classes,
-                'min_width': self.min_width,
-                'min_height': self.min_height,
-                'created_at': datetime.now().isoformat(),
-                'total_files_processed': self.processed_files,
-                'corrupted_files_count': len(self.corrupted_files),
-                'small_files_count': len(self.small_files)
+                'name': 'EuroSAT_Processed',
+                'rgb_source': str(self.rgb_source_path),
+                'multispectral_source': str(self.multispectral_source_path),
+                'output': str(self.output_path),
+                'created': datetime.now().isoformat(),
+                'target_size': [self.target_height, self.target_width],
+                'random_seed': self.random_seed
             },
-            'class_distribution': {},
-            'split_ratios': {},
-            'file_statistics': {}
+            'rgb_stats': self.stats['rgb'],
+            'multispectral_stats': self.stats['multispectral'],
+            'split_ratios': {
+                'train': 0.7,
+                'val': 0.15,
+                'test': 0.15
+            }
         }
         
-        total_files = 0
-        for class_name, splits in split_info.items():
-            if 'counts' in splits:
-                counts = splits['counts']
-                metadata['class_distribution'][class_name] = counts
-                total_files += counts['total']
+        # Save metadata for both data types
+        for data_type in ['rgb', 'multispectral']:
+            metadata_dir = self.output_path / data_type / 'metadata'
+            metadata_file = metadata_dir / 'dataset_info.json'
+            
+            with open(metadata_file, 'w') as f:
+                json.dump(metadata, f, indent=2)
         
-        total_train = sum(splits['counts']['train'] for splits in split_info.values() if 'counts' in splits)
-        total_val = sum(splits['counts']['val'] for splits in split_info.values() if 'counts' in splits)
-        total_test = sum(splits['counts']['test'] for splits in split_info.values() if 'counts' in splits)
-        
-        metadata['split_ratios'] = {
-            'train': total_train / total_files if total_files > 0 else 0,
-            'val': total_val / total_files if total_files > 0 else 0,
-            'test': total_test / total_files if total_files > 0 else 0
-        }
-        
-        metadata_file = self.output_path / data_type / 'metadata' / 'dataset_info.json'
-        with open(metadata_file, 'w') as f:
-            json.dump(metadata, f, indent=2)
-        
-        self.logger.debug(f"Metadata saved for {data_type}")
-        return metadata
+        self.logger.info("Metadata saved")
     
-    def process_data_type(self, data_type, file_extension):
-        """Process a specific data type (RGB or multispectral)"""
-        self.logger.info(f"\nProcessing {data_type} data...")
-        
-        # Reset counters for new data type
-        self.processed_files = 0
-        self.corrupted_files = []
-        self.small_files = []
-        
-        # Determine source path
-        if data_type == 'multispectral':
-            source_path = self.source_path / "allBands"
-        else:
-            source_path = self.source_path
-        
-        # Collect files per class
-        files_per_class = {}
-        for class_name in self.expected_classes:
-            class_dir = source_path / class_name
-            if class_dir.exists():
-                files = list(class_dir.glob(file_extension))
-                if files:
-                    files_per_class[class_name] = files
-        
-        if not files_per_class:
-            self.logger.warning(f"No {data_type} files found for processing")
-            return None
-        
-        # Clean dataset
-        cleaned_files, validation_report = self.clean_dataset(
-            files_per_class, source_path, data_type)
-        
-        # Split dataset
-        split_info = self.split_dataset(cleaned_files)
-        
-        # Copy files to organized structure
-        self.copy_files_to_structure(split_info, data_type)
-        
-        # Save validation report
-        self.save_validation_report(validation_report, data_type)
-        
-        # Generate metadata
-        metadata = self.generate_metadata(split_info, data_type)
-        
-        return metadata
-    
-    def print_summary(self, rgb_metadata, multispectral_metadata):
-        """Print dataset summary"""
-        self.logger.info("\n" + "=" * 60)
-        self.logger.info("DATASET ORGANIZATION SUMMARY")
-        self.logger.info("=" * 60)
-        
-        if rgb_metadata:
-            self.logger.info("\nRGB Data Summary:")
-            self.logger.info(f"Total Files: {rgb_metadata['dataset_info']['total_files_processed']}")
-            self.logger.info(f"Train/Val/Test Split: {rgb_metadata['split_ratios']['train']:.1%}/"
-                           f"{rgb_metadata['split_ratios']['val']:.1%}/"
-                           f"{rgb_metadata['split_ratios']['test']:.1%}")
-        
-        if multispectral_metadata:
-            self.logger.info("\nMultispectral Data Summary:")
-            self.logger.info(f"Total Files: {multispectral_metadata['dataset_info']['total_files_processed']}")
-            self.logger.info(f"Train/Val/Test Split: {multispectral_metadata['split_ratios']['train']:.1%}/"
-                           f"{multispectral_metadata['split_ratios']['val']:.1%}/"
-                           f"{multispectral_metadata['split_ratios']['test']:.1%}")
-        
-        self.logger.info("\nOutput Structure:")
-        self.logger.info(f"  {self.output_path}")
-        self.logger.info(f"  ├── rgb/")
-        self.logger.info(f"  │   ├── train/")
-        self.logger.info(f"  │   ├── val/")
-        self.logger.info(f"  │   └── test/")
-        self.logger.info(f"  └── multispectral/")
-        self.logger.info(f"      ├── train/")
-        self.logger.info(f"      ├── val/")
-        self.logger.info(f"      └── test/")
-        
-        self.logger.info("\n" + "=" * 60)
-    
-    def organize_dataset(self, train_ratio=0.7, val_ratio=0.15, test_ratio=0.15):
-        """Main function to organize the dataset"""
-        self.logger.info("\nStarting EuroSAT dataset organization...")
-        
-        if not self.check_libraries():
-            self.logger.warning("Proceeding with limited functionality")
-        
+    def run(self):
+        """Execute the full processing pipeline"""
         scan_results = self.scan_source_dataset()
         
         if not scan_results['rgb']['available'] and not scan_results['multispectral']['available']:
-            self.logger.error("No valid data found in source directory!")
+            self.logger.error("No valid data found in source directories!")
             return
         
-        self.create_output_structure()
+        self.create_directory_structure()
         
-        rgb_metadata = None
+        # Process RGB dataset if available
         if scan_results['rgb']['available']:
-            rgb_metadata = self.process_data_type(
-                data_type='rgb',
-                file_extension="*.jpg"
-            )
+            if not self.process_rgb_dataset():
+                self.logger.warning("RGB processing encountered issues")
         
-        multispectral_metadata = None
+        # Process multispectral dataset if available
         if scan_results['multispectral']['available']:
-            multispectral_metadata = self.process_data_type(
-                data_type='multispectral',
-                file_extension="*.tif"
-            )
+            if not self.process_multispectral_dataset():
+                self.logger.warning("Multispectral processing encountered issues")
         
-        self.print_summary(rgb_metadata, multispectral_metadata)
-        self.logger.info("\nDataset organization completed successfully!")
-        self.logger.info(f"Organized dataset saved to: {self.output_path}")
-        self.logger.info(f"Detailed logs available at: {self.output_path / 'dataset_organizations.log'}")
+        self.save_metadata()
+        
+        # Final summary
+        self.logger.info("\n" + "=" * 50)
+        self.logger.info("PROCESSING COMPLETE")
+        self.logger.info("=" * 50)
+        self.logger.info(f"RGB: Total={self.stats['rgb']['total']}, Processed={self.stats['rgb']['processed']}")
+        self.logger.info(f"Multispectral: Total={self.stats['multispectral']['total']}, Processed={self.stats['multispectral']['processed']}")
+        self.logger.info(f"\nOutput directory: {self.output_path}")
 
 if __name__ == "__main__":
-    # Configuration
-    SOURCE_PATH = r"EuroSAT"
-    OUTPUT_PATH = r"Dataset_EuroSAT_Split"
-    MIN_SIZE = (64, 64)  # Minimum image size for CNN/ViT models
+    # Configuration - adjust these paths as needed
+    RGB_SOURCE_PATH = r"Dataset\EuroSAT" 
+    MULTISPECTRAL_SOURCE_PATH = r"Dataset\EuroSATallBands" 
+    OUTPUT_PATH = "EuroSAT_Processed" 
+    TARGET_SIZE = (224, 224)  
+    MIN_SIZE = (64, 64)  
+    RANDOM_SEED = 42 
     
-    # Initialize and run organizer
-    organizer = EuroSATDatasetOrganizer(SOURCE_PATH, OUTPUT_PATH, min_size=MIN_SIZE)
-    
-    # Set random seed for reproducible splits
-    random.seed(42)
-    np.random.seed(42)
-    
-    # Organize dataset
-    organizer.organize_dataset(
-        train_ratio=0.7,
-        val_ratio=0.15,
-        test_ratio=0.15
+    # Initialize and run processor
+    processor = EuroSATProcessor(
+        rgb_source_path=RGB_SOURCE_PATH,
+        multispectral_source_path=MULTISPECTRAL_SOURCE_PATH,
+        output_path=OUTPUT_PATH,
+        target_size=TARGET_SIZE,
+        min_size=MIN_SIZE,
+        random_seed=RANDOM_SEED
     )
+    
+    processor.run()
