@@ -4,7 +4,6 @@ from PIL import Image
 import rasterio  
 
 def check_eurosat_dataset_sizes(dataset_path):
-    # Check RGB dataset
     rgb_path = os.path.join(dataset_path, "RGB")
     if os.path.exists(rgb_path):
         print("Checking RGB dataset...")
