@@ -31,7 +31,7 @@ class EuroSATProcessor:
             'River', 'SeaLake'
         ]
         
-        # Setup logging and stats
+        
         self.setup_logging()
         self.initialize_stats()
         
