@@ -1,0 +1,29 @@
+2025-08-18 06:34:44,367 - root - INFO - Starting EuroSAT model training
+2025-08-18 06:34:44,372 - root - INFO - System Resource Check:
+2025-08-18 06:34:44,372 - root - INFO - Total Memory: 15.73 GB
+2025-08-18 06:34:44,373 - root - INFO - Available Memory: 7.27 GB
+2025-08-18 06:34:44,373 - root - INFO - CPU Cores: 12
+2025-08-18 06:34:44,376 - root - INFO - GPU: NVIDIA GeForce RTX 2050
+2025-08-18 06:34:44,377 - root - INFO - GPU Memory: 4.00 GB
+2025-08-18 06:34:44,378 - root - INFO - Data availability check passed
+2025-08-18 06:34:44,403 - root - INFO - Training configuration: {'data_path': 'D:\\pitech\\data\\processed', 'batch_size': 16, 'lr': 0.0003, 'weight_decay': 0.0001, 'epochs': 50, 'patience': 7, 'checkpoint_interval': 1, 'save_dir': 'D:\\pitech\\models\\trained', 'seed': 42, 'device': 'cuda'}
+2025-08-18 06:34:44,455 - root - INFO - Initializing trainer...
+2025-08-18 06:34:45,464 - root - INFO - Training samples: 18900
+2025-08-18 06:34:45,465 - root - INFO - Validation samples: 4050
+2025-08-18 06:34:45,696 - root - INFO - Model initialized on cuda
+2025-08-18 06:34:45,700 - root - INFO - Starting training process...
+2025-08-18 06:34:45,701 - root - INFO - Starting training...
+2025-08-18 06:37:31,272 - root - ERROR - Training failed: 'val_accuracy'
+2025-08-18 06:37:31,273 - root - ERROR - Training failed: 'val_accuracy'
+Traceback (most recent call last):
+  File "D:\pitech\train_model.py", line 156, in main
+    best_f1 = trainer.train()
+              ^^^^^^^^^^^^^^^
+  File "D:\pitech\src\training.py", line 344, in train
+    val_metrics = self.validate(epoch)
+                  ^^^^^^^^^^^^^^^^^^^^
+  File "D:\pitech\src\training.py", line 327, in validate
+    self.history[f'val_{key}'].append(value)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^
+KeyError: 'val_accuracy'
+2025-08-18 06:37:31,274 - root - INFO - Cleaning up resources...

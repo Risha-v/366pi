@@ -1,0 +1,81 @@
+2025-08-18 06:43:06,722 - root - INFO - Starting EuroSAT model training
+2025-08-18 06:43:06,727 - root - INFO - System Resource Check:
+2025-08-18 06:43:06,728 - root - INFO - Total Memory: 15.73 GB
+2025-08-18 06:43:06,728 - root - INFO - Available Memory: 7.33 GB
+2025-08-18 06:43:06,728 - root - INFO - CPU Cores: 12
+2025-08-18 06:43:06,732 - root - INFO - GPU: NVIDIA GeForce RTX 2050
+2025-08-18 06:43:06,732 - root - INFO - GPU Memory: 4.00 GB
+2025-08-18 06:43:06,732 - root - INFO - Data availability check passed
+2025-08-18 06:43:06,761 - root - INFO - Training configuration: {'data_path': 'D:\\pitech\\data\\processed', 'batch_size': 16, 'lr': 0.0003, 'weight_decay': 0.0001, 'epochs': 50, 'patience': 7, 'checkpoint_interval': 1, 'save_dir': 'D:\\pitech\\models\\trained', 'seed': 42, 'device': 'cuda'}
+2025-08-18 06:43:06,824 - root - INFO - Initializing trainer...
+2025-08-18 06:43:07,125 - root - INFO - Training samples: 18900
+2025-08-18 06:43:07,126 - root - INFO - Validation samples: 4050
+2025-08-18 06:43:07,350 - root - INFO - Model initialized on cuda
+2025-08-18 06:43:07,353 - root - INFO - Starting training process...
+2025-08-18 06:43:07,354 - root - INFO - Starting training...
+2025-08-18 06:45:51,987 - root - INFO - Epoch 1/50 | Train Loss: 0.8139 | Train Acc: 88.26% | Val Loss: 0.6152 | Val Acc: 96.17% | Val F1: 0.9616
+2025-08-18 06:45:52,168 - root - INFO - Saved checkpoint to D:\pitech\models\trained\best_model.pth
+2025-08-18 06:45:52,352 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_1.pth
+2025-08-18 06:48:25,100 - root - INFO - Epoch 2/50 | Train Loss: 0.6549 | Train Acc: 94.88% | Val Loss: 0.5875 | Val Acc: 96.91% | Val F1: 0.9691
+2025-08-18 06:48:25,285 - root - INFO - Saved checkpoint to D:\pitech\models\trained\best_model.pth
+2025-08-18 06:48:25,475 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_2.pth
+2025-08-18 06:50:58,737 - root - INFO - Epoch 3/50 | Train Loss: 0.6234 | Train Acc: 96.07% | Val Loss: 0.5683 | Val Acc: 97.78% | Val F1: 0.9777
+2025-08-18 06:50:58,938 - root - INFO - Saved checkpoint to D:\pitech\models\trained\best_model.pth
+2025-08-18 06:50:59,116 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_3.pth
+2025-08-18 06:53:31,632 - root - INFO - Epoch 4/50 | Train Loss: 0.6021 | Train Acc: 96.69% | Val Loss: 0.5564 | Val Acc: 97.85% | Val F1: 0.9784
+2025-08-18 06:53:31,849 - root - INFO - Saved checkpoint to D:\pitech\models\trained\best_model.pth
+2025-08-18 06:53:32,051 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_4.pth
+2025-08-18 06:56:04,043 - root - INFO - Epoch 5/50 | Train Loss: 0.5856 | Train Acc: 97.25% | Val Loss: 0.5543 | Val Acc: 97.98% | Val F1: 0.9797
+2025-08-18 06:56:04,320 - root - INFO - Saved checkpoint to D:\pitech\models\trained\best_model.pth
+2025-08-18 06:56:04,586 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_5.pth
+2025-08-18 06:58:35,615 - root - INFO - Epoch 6/50 | Train Loss: 0.5738 | Train Acc: 97.61% | Val Loss: 0.5483 | Val Acc: 98.30% | Val F1: 0.9829
+2025-08-18 06:58:35,901 - root - INFO - Saved checkpoint to D:\pitech\models\trained\best_model.pth
+2025-08-18 06:58:36,235 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_6.pth
+2025-08-18 12:45:37,103 - root - INFO - Epoch 7/50 | Train Loss: 0.5669 | Train Acc: 97.85% | Val Loss: 0.5639 | Val Acc: 97.48% | Val F1: 0.9747
+2025-08-18 12:45:37,227 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_7.pth
+2025-08-18 12:48:21,836 - root - INFO - Epoch 8/50 | Train Loss: 0.5590 | Train Acc: 98.07% | Val Loss: 0.5514 | Val Acc: 98.07% | Val F1: 0.9807
+2025-08-18 12:48:21,945 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_8.pth
+2025-08-18 12:50:20,299 - root - INFO - Epoch 9/50 | Train Loss: 0.5505 | Train Acc: 98.34% | Val Loss: 0.5481 | Val Acc: 98.12% | Val F1: 0.9813
+2025-08-18 12:50:20,475 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_9.pth
+2025-08-18 12:52:40,664 - root - INFO - Epoch 10/50 | Train Loss: 0.5487 | Train Acc: 98.40% | Val Loss: 0.5399 | Val Acc: 98.47% | Val F1: 0.9847
+2025-08-18 12:52:40,828 - root - INFO - Saved checkpoint to D:\pitech\models\trained\best_model.pth
+2025-08-18 12:52:40,999 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_10.pth
+2025-08-18 12:55:03,789 - root - INFO - Epoch 11/50 | Train Loss: 0.5458 | Train Acc: 98.53% | Val Loss: 0.5404 | Val Acc: 98.49% | Val F1: 0.9849
+2025-08-18 12:55:03,973 - root - INFO - Saved checkpoint to D:\pitech\models\trained\best_model.pth
+2025-08-18 12:55:04,166 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_11.pth
+2025-08-18 12:57:24,904 - root - INFO - Epoch 12/50 | Train Loss: 0.5423 | Train Acc: 98.67% | Val Loss: 0.5378 | Val Acc: 98.57% | Val F1: 0.9857
+2025-08-18 12:57:25,093 - root - INFO - Saved checkpoint to D:\pitech\models\trained\best_model.pth
+2025-08-18 12:57:25,272 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_12.pth
+2025-08-18 12:59:45,348 - root - INFO - Epoch 13/50 | Train Loss: 0.5378 | Train Acc: 98.75% | Val Loss: 0.5382 | Val Acc: 98.59% | Val F1: 0.9859
+2025-08-18 12:59:45,544 - root - INFO - Saved checkpoint to D:\pitech\models\trained\best_model.pth
+2025-08-18 12:59:45,729 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_13.pth
+2025-08-18 13:02:06,226 - root - INFO - Epoch 14/50 | Train Loss: 0.5387 | Train Acc: 98.76% | Val Loss: 0.5448 | Val Acc: 98.32% | Val F1: 0.9832
+2025-08-18 13:02:06,408 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_14.pth
+2025-08-18 13:04:28,170 - root - INFO - Epoch 15/50 | Train Loss: 0.5324 | Train Acc: 99.01% | Val Loss: 0.5430 | Val Acc: 98.40% | Val F1: 0.9839
+2025-08-18 13:04:28,364 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_15.pth
+2025-08-18 13:06:50,875 - root - INFO - Epoch 16/50 | Train Loss: 0.5308 | Train Acc: 99.05% | Val Loss: 0.5430 | Val Acc: 98.40% | Val F1: 0.9839
+2025-08-18 13:06:51,064 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_16.pth
+2025-08-18 13:09:08,219 - root - INFO - Epoch 17/50 | Train Loss: 0.5283 | Train Acc: 99.13% | Val Loss: 0.5435 | Val Acc: 98.25% | Val F1: 0.9824
+2025-08-18 13:09:08,391 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_17.pth
+2025-08-18 13:11:26,121 - root - INFO - Epoch 18/50 | Train Loss: 0.5196 | Train Acc: 99.41% | Val Loss: 0.5413 | Val Acc: 98.35% | Val F1: 0.9834
+2025-08-18 13:11:26,314 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_18.pth
+2025-08-18 13:13:43,974 - root - INFO - Epoch 19/50 | Train Loss: 0.5183 | Train Acc: 99.44% | Val Loss: 0.5378 | Val Acc: 98.62% | Val F1: 0.9861
+2025-08-18 13:13:44,161 - root - INFO - Saved checkpoint to D:\pitech\models\trained\best_model.pth
+2025-08-18 13:13:44,340 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_19.pth
+2025-08-18 13:16:01,314 - root - INFO - Epoch 20/50 | Train Loss: 0.5163 | Train Acc: 99.53% | Val Loss: 0.5449 | Val Acc: 98.40% | Val F1: 0.9839
+2025-08-18 13:16:01,478 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_20.pth
+2025-08-18 13:18:20,001 - root - INFO - Epoch 21/50 | Train Loss: 0.5158 | Train Acc: 99.54% | Val Loss: 0.5505 | Val Acc: 98.20% | Val F1: 0.9819
+2025-08-18 13:18:20,182 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_21.pth
+2025-08-18 13:20:38,506 - root - INFO - Epoch 22/50 | Train Loss: 0.5158 | Train Acc: 99.48% | Val Loss: 0.5473 | Val Acc: 98.22% | Val F1: 0.9822
+2025-08-18 13:20:38,688 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_22.pth
+2025-08-18 13:22:56,363 - root - INFO - Epoch 23/50 | Train Loss: 0.5136 | Train Acc: 99.63% | Val Loss: 0.5434 | Val Acc: 98.42% | Val F1: 0.9842
+2025-08-18 13:22:56,537 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_23.pth
+2025-08-18 13:25:14,549 - root - INFO - Epoch 24/50 | Train Loss: 0.5138 | Train Acc: 99.57% | Val Loss: 0.5382 | Val Acc: 98.52% | Val F1: 0.9852
+2025-08-18 13:25:14,733 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_24.pth
+2025-08-18 13:27:33,548 - root - INFO - Epoch 25/50 | Train Loss: 0.5101 | Train Acc: 99.75% | Val Loss: 0.5382 | Val Acc: 98.54% | Val F1: 0.9854
+2025-08-18 13:27:33,719 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_25.pth
+2025-08-18 13:29:54,335 - root - INFO - Epoch 26/50 | Train Loss: 0.5101 | Train Acc: 99.76% | Val Loss: 0.5377 | Val Acc: 98.54% | Val F1: 0.9854
+2025-08-18 13:29:54,335 - root - INFO - Early stopping at epoch 26
+2025-08-18 13:29:54,335 - root - INFO - Training metadata saved to D:\pitech\models\trained\training_metadata.json
+2025-08-18 13:29:54,335 - root - INFO - Training completed successfully. Best F1: 0.9861
+2025-08-18 13:29:54,335 - root - INFO - Cleaning up resources...

@@ -1,0 +1,12 @@
+2025-08-18 05:56:26,441 - root - INFO - Starting EuroSAT model training
+2025-08-18 05:56:26,446 - root - INFO - System Resource Check:
+2025-08-18 05:56:26,448 - root - INFO - Total Memory: 15.73 GB
+2025-08-18 05:56:26,448 - root - INFO - Available Memory: 7.24 GB
+2025-08-18 05:56:26,448 - root - INFO - CPU Cores: 12
+2025-08-18 05:56:26,453 - root - INFO - GPU: NVIDIA GeForce RTX 2050
+2025-08-18 05:56:26,454 - root - INFO - GPU Memory: 4.00 GB
+2025-08-18 05:56:26,456 - root - INFO - Data availability check passed
+2025-08-18 05:56:26,474 - root - INFO - Training configuration: {'data_path': 'D:\\pitech\\data\\processed', 'batch_size': 16, 'lr': 0.0003, 'weight_decay': 0.0001, 'epochs': 50, 'patience': 7, 'checkpoint_interval': 1, 'save_dir': 'D:\\pitech\\models\\trained', 'seed': 42, 'device': 'cuda'}
+2025-08-18 05:56:26,475 - root - INFO - System resources: {'num_workers': 4, 'torch_threads': 4, 'max_memory': 0.75, 'gradient_accumulation': 2, 'use_amp': True, 'dropout': 0.3}
+2025-08-18 05:56:26,476 - root - INFO - Initializing trainer...
+2025-08-18 05:56:27,345 - root - INFO - Cleaning up resources...

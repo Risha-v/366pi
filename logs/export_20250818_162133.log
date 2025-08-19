@@ -1,0 +1,11 @@
+2025-08-18 16:21:33,078 - INFO - Loading model...
+2025-08-18 16:21:33,380 - INFO - Model loaded successfully
+2025-08-18 16:21:33,380 - INFO - EuroSAT Classifier initialized on cuda
+2025-08-18 16:21:33,380 - INFO - Model loaded successfully from D:\pitech\models\trained\best_model.pth
+2025-08-18 16:21:33,380 - INFO - Exporting model to ONNX format: D:\pitech\models\exported\eurosat_mobilenetv3.onnx
+2025-08-18 16:21:35,753 - INFO - Model exported to ONNX: D:\pitech\models\exported\eurosat_mobilenetv3.onnx
+2025-08-18 16:21:35,753 - INFO - Successfully exported ONNX model to D:\pitech\models\exported\eurosat_mobilenetv3.onnx
+2025-08-18 16:21:35,753 - INFO - Exporting model to TorchScript format: D:\pitech\models\exported\eurosat_mobilenetv3.pt
+2025-08-18 16:21:38,432 - INFO - Model exported to TorchScript: D:\pitech\models\exported\eurosat_mobilenetv3.pt
+2025-08-18 16:21:38,432 - INFO - Successfully exported TorchScript model to D:\pitech\models\exported\eurosat_mobilenetv3.pt
+2025-08-18 16:21:38,432 - INFO - All export operations completed successfully

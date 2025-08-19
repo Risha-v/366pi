@@ -1,0 +1,38 @@
+2025-08-18 06:17:17,391 - root - INFO - Starting EuroSAT model training
+2025-08-18 06:17:17,396 - root - INFO - System Resource Check:
+2025-08-18 06:17:17,396 - root - INFO - Total Memory: 15.73 GB
+2025-08-18 06:17:17,396 - root - INFO - Available Memory: 7.01 GB
+2025-08-18 06:17:17,396 - root - INFO - CPU Cores: 12
+2025-08-18 06:17:17,401 - root - INFO - GPU: NVIDIA GeForce RTX 2050
+2025-08-18 06:17:17,402 - root - INFO - GPU Memory: 4.00 GB
+2025-08-18 06:17:17,402 - root - INFO - Data availability check passed
+2025-08-18 06:17:17,423 - root - INFO - Training configuration: {'data_path': 'D:\\pitech\\data\\processed', 'batch_size': 16, 'lr': 0.0003, 'weight_decay': 0.0001, 'epochs': 50, 'patience': 7, 'checkpoint_interval': 1, 'save_dir': 'D:\\pitech\\models\\trained', 'seed': 42, 'device': 'cuda'}
+2025-08-18 06:17:17,426 - root - INFO - System resources: {'num_workers': 4, 'torch_threads': 4, 'max_memory': 0.75, 'gradient_accumulation': 2, 'use_amp': True, 'dropout': 0.3}
+2025-08-18 06:17:17,427 - root - INFO - Initializing trainer...
+2025-08-18 06:17:18,851 - root - INFO - Training samples: 18900
+2025-08-18 06:17:18,851 - root - INFO - Validation samples: 4050
+2025-08-18 06:17:19,155 - root - INFO - Model initialized on cuda
+2025-08-18 06:17:19,159 - root - INFO - Starting training process...
+2025-08-18 06:17:19,160 - root - INFO - Starting training...
+2025-08-18 06:17:19,160 - root - INFO - Training configuration: {'data_path': 'D:\\pitech\\data\\processed', 'batch_size': 16, 'lr': 0.0003, 'weight_decay': 0.0001, 'epochs': 50, 'patience': 7, 'checkpoint_interval': 1, 'save_dir': 'D:\\pitech\\models\\trained', 'seed': 42, 'device': 'cuda'}
+2025-08-18 06:19:49,681 - root - INFO - Epoch 1/50 | Train Loss: nan | Train Acc: 11.11% | Val Loss: nan | Val Acc: 11.11% | Val F1: 0.0222
+2025-08-18 06:19:49,767 - root - INFO - Saved checkpoint to D:\pitech\models\trained\best_model.pth
+2025-08-18 06:19:49,848 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_1.pth
+2025-08-18 06:21:43,069 - root - INFO - Epoch 2/50 | Train Loss: nan | Train Acc: 11.11% | Val Loss: nan | Val Acc: 11.11% | Val F1: 0.0222
+2025-08-18 06:21:43,152 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_2.pth
+2025-08-18 06:23:37,221 - root - INFO - Epoch 3/50 | Train Loss: nan | Train Acc: 11.11% | Val Loss: nan | Val Acc: 11.11% | Val F1: 0.0222
+2025-08-18 06:23:37,361 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_3.pth
+2025-08-18 06:25:30,191 - root - INFO - Epoch 4/50 | Train Loss: nan | Train Acc: 11.11% | Val Loss: nan | Val Acc: 11.11% | Val F1: 0.0222
+2025-08-18 06:25:30,270 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_4.pth
+2025-08-18 06:27:23,471 - root - INFO - Epoch 5/50 | Train Loss: nan | Train Acc: 11.11% | Val Loss: nan | Val Acc: 11.11% | Val F1: 0.0222
+2025-08-18 06:27:23,551 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_5.pth
+2025-08-18 06:29:12,234 - root - INFO - Epoch 6/50 | Train Loss: nan | Train Acc: 11.11% | Val Loss: nan | Val Acc: 11.11% | Val F1: 0.0222
+2025-08-18 06:29:12,350 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_6.pth
+2025-08-18 06:31:01,067 - root - INFO - Epoch 7/50 | Train Loss: nan | Train Acc: 11.11% | Val Loss: nan | Val Acc: 11.11% | Val F1: 0.0222
+2025-08-18 06:31:01,149 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_7.pth
+2025-08-18 06:32:50,349 - root - INFO - Epoch 8/50 | Train Loss: nan | Train Acc: 11.11% | Val Loss: nan | Val Acc: 11.11% | Val F1: 0.0222
+2025-08-18 06:32:50,477 - root - INFO - Saved checkpoint to D:\pitech\models\trained\checkpoint_epoch_8.pth
+2025-08-18 06:33:46,656 - root - INFO - Training interrupted by user
+2025-08-18 06:33:46,665 - root - INFO - Training metadata saved to D:\pitech\models\trained\training_metadata.json
+2025-08-18 06:33:46,667 - root - INFO - Training completed successfully. Best F1: 0.0222
+2025-08-18 06:33:46,667 - root - INFO - Cleaning up resources...

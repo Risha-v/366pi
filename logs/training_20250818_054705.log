@@ -1,0 +1,21 @@
+2025-08-18 05:47:05,545 - root - INFO - Starting EuroSAT model training
+2025-08-18 05:47:05,550 - root - INFO - System Resource Check:
+2025-08-18 05:47:05,550 - root - INFO - Total Memory: 15.73 GB
+2025-08-18 05:47:05,551 - root - INFO - Available Memory: 7.16 GB
+2025-08-18 05:47:05,551 - root - INFO - CPU Cores: 12
+2025-08-18 05:47:05,551 - root - INFO - GPU: Not available
+2025-08-18 05:47:05,552 - root - INFO - Data availability check passed
+2025-08-18 05:47:05,554 - root - INFO - Training configuration: {'data_path': 'D:\\pitech\\data\\processed', 'batch_size': 16, 'lr': 0.0003, 'weight_decay': 0.0001, 'epochs': 50, 'patience': 7, 'checkpoint_interval': 1, 'save_dir': 'D:\\pitech\\models\\trained', 'seed': 42, 'device': 'cpu'}
+2025-08-18 05:47:05,557 - root - INFO - System resources: {'num_workers': 4, 'torch_threads': 4, 'max_memory': 0.75, 'gradient_accumulation': 2, 'use_amp': True, 'dropout': 0.3}
+2025-08-18 05:47:05,557 - root - INFO - Initializing trainer...
+2025-08-18 05:47:05,562 - root - WARNING - CUDA not available - disabling mixed precision training
+2025-08-18 05:47:06,042 - root - INFO - Training samples: 18900
+2025-08-18 05:47:06,043 - root - INFO - Validation samples: 4050
+2025-08-18 05:47:06,313 - root - INFO - Model initialized on cpu
+2025-08-18 05:47:06,315 - root - INFO - Starting training process...
+2025-08-18 05:47:06,316 - root - INFO - Starting training...
+2025-08-18 05:47:06,316 - root - INFO - Training configuration: {'data_path': 'D:\\pitech\\data\\processed', 'batch_size': 16, 'lr': 0.0003, 'weight_decay': 0.0001, 'epochs': 50, 'patience': 7, 'checkpoint_interval': 1, 'save_dir': 'D:\\pitech\\models\\trained', 'seed': 42, 'device': 'cpu'}
+2025-08-18 05:47:52,740 - root - INFO - Training interrupted by user
+2025-08-18 05:47:52,755 - root - INFO - Training metadata saved to D:\pitech\models\trained\training_metadata.json
+2025-08-18 05:47:52,756 - root - INFO - Training completed successfully. Best F1: 0.0000
+2025-08-18 05:47:52,756 - root - INFO - Cleaning up resources...
